@@ -14,3 +14,12 @@ variable "db_instance_name" {
 variable "db_instance_keypair" {
   type = string
 }
+
+variable "datastore_ver" {
+  type    = string
+  default = "8.0"
+}
+
+variable "datastore_size" {
+  default = 20
+}

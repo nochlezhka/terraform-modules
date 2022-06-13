@@ -5,12 +5,12 @@ resource "mcs_db_instance" "main" {
 
   datastore {
     type    = "mysql"
-    version = "5.7"
+    version = var.datastore_ver
   }
 
   flavor_id = data.openstack_compute_flavor_v2.main.id
 
-  size        = 20
+  size        = var.datastore_size
   volume_type = "ceph-ssd"
 
   network {
