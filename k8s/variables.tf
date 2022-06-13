@@ -18,3 +18,12 @@ variable "k8s_keypair" {
 variable "k8s_cluster_name" {
   type = string
 }
+
+variable "insecure_registries" {
+  type    = list(string)
+  default = []
+}
+
+variable "master_count" {
+  default = 1
+}
