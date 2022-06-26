@@ -1,6 +1,7 @@
 resource "openstack_networking_network_v2" "main" {
   name           = var.net_name
   admin_state_up = true
+  external       = var.external
 }
 
 resource "openstack_networking_subnet_v2" "main" {

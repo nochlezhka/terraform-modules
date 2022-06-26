@@ -17,3 +17,9 @@ variable "cidr" {
 variable "router_name" {
   type = string
 }
+
+variable "external" {
+  description = "The external routing facility of the network."
+  type        = bool
+  default     = false
+}
