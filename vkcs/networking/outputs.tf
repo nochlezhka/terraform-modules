@@ -6,6 +6,7 @@ output "network_name" {
   value = vkcs_networking_network.main.name
 }
 
-output "subnets_ids" {
+# TODO: make output "name"="id"
+output "subnet_ids" {
   value = vkcs_networking_subnet.main
 }
