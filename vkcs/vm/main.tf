@@ -17,7 +17,7 @@ resource "vkcs_compute_instance" "main" {
   stop_before_destroy = true
 
   network {
-    name = var.vm_network_name
+    uuid = var.vm_network_name
   }
 }
 
