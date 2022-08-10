@@ -2,26 +2,22 @@
 # virtual machine
 #
 resource "vkcs_compute_instance" "main" {
-  name = var.blank_name
-  tags = var.tags
+  name     = var.blank_name
+  tags     = var.tags
+  metadata = var.metadata
 
-  image_id    = var.vm_image_id
-  flavor_name = var.vm_size
+  image_id  = var.vm_image_id
+  flavor_id = data.vkcs_compute_flavor.main.id
 
   user_data = file("${path.module}/files/cloud_init.cfg")
 
-  key_pair        = var.ssh_generate_keypair ? vkcs_compute_keypair.main.name : (var.ssh_use_existing_keypair ? var.ssh_existing_keypair_name : null )
-  # TODO: we may configure it later
-  security_groups = ["default"]
+  key_pair        = var.ssh_generate_keypair ? vkcs_compute_keypair.main[0].name : (var.ssh_use_existing_keypair ? var.ssh_existing_keypair_name : null )
+  security_groups = var.security_groups
 
   stop_before_destroy = true
 
   network {
     name = var.vm_network_name
-  }
-
-  metadata = {
-    this = "that"
   }
 }
 
@@ -66,5 +62,7 @@ resource "random_string" "ssh_postfix" {
   numeric = true
 }
 resource "vkcs_compute_keypair" "main" {
+  count = var.ssh_generate_keypair ? 1 : 0
+
   name = format("%s-%s", var.blank_name, random_string.ssh_postfix.result)
 }

@@ -8,6 +8,9 @@ variable "blank_name" {
 variable "tags" {
   default = []
 }
+variable "metadata" {
+  default = {}
+}
 
 #
 # vm configuration
@@ -17,12 +20,23 @@ variable "vm_image_id" {
   # NOTE: Ubuntu-20.04.1-202008
   default = "d853edd0-27b3-4385-a380-248ac8e40956"
 }
-variable "vm_size" {
+variable "vm_flavor" {
   type    = string
   default = "Basic-1-1-10"
 }
+#
+# network
+#
 variable "vm_network_name" {
   type = string
+}
+variable "security_groups" {
+  type    = list(string)
+  default = ["default"]
+}
+variable "add_fip" {
+  type    = bool
+  default = false
 }
 #
 # ssh key
