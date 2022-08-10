@@ -10,7 +10,7 @@ variable "availability_zone" {
 
 variable "datastore_type" {
   type    = string
-  default = "mysql"
+  default = "galera_mysql"
 }
 variable "datastore_version" {
   type    = string
