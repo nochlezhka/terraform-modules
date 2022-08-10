@@ -1,3 +1,3 @@
-output "instance_id" {
-  value = vkcs_db_instance.main.id
+output "cluster_id" {
+  value = vkcs_db_cluster.main.id
 }
