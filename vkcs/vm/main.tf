@@ -2,7 +2,9 @@
 # virtual machine
 #
 resource "vkcs_compute_instance" "main" {
-  name        = var.blank_name
+  name = var.blank_name
+  tags = var.tags
+
   image_id    = var.vm_image_id
   flavor_name = var.vm_size
 
@@ -21,8 +23,6 @@ resource "vkcs_compute_instance" "main" {
   metadata = {
     this = "that"
   }
-
-  tags = var.tags
 }
 
 #
