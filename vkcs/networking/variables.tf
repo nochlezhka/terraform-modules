@@ -18,12 +18,6 @@ variable "subnets" {
   ))
 }
 
-variable "external" {
-  description = "The external routing facility of the network"
-  type        = bool
-  default     = false
-}
-
 variable "vkcs_services_access" {
   description = "Whether VKCS services access is enabled"
   type        = bool

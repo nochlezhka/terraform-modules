@@ -7,7 +7,6 @@ resource "vkcs_networking_network" "main" {
 
   admin_state_up       = true
   vkcs_services_access = var.vkcs_services_access
-  external             = var.external
 }
 
 #
