@@ -13,7 +13,9 @@ resource "vkcs_networking_network" "main" {
 # subnets
 #
 resource "vkcs_networking_subnet" "main" {
-  for_each = {for subnet in var.subnets :  subnet.name => subnet}
+  for_each = {
+  for subnet in var.subnets :  subnet["name"] => subnet
+  }
 
   name = each.key
   tags = var.tags
@@ -36,7 +38,9 @@ resource "vkcs_networking_router" "main" {
 }
 
 resource "vkcs_networking_router_interface" "main" {
-  for_each = {for subnet in var.subnets :  subnet.name => subnet}
+  for_each = {
+  for subnet in var.subnets : subnet["name"] => subnet if subnet["public"]
+  }
 
   router_id = vkcs_networking_router.main.id
   subnet_id = vkcs_networking_subnet.main[each.key].id

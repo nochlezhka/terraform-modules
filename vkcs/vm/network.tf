@@ -11,3 +11,13 @@ resource "vkcs_compute_floatingip_associate" "main" {
   floating_ip = vkcs_networking_floatingip.fip[0].address
   instance_id = vkcs_compute_instance.main.id
 }
+
+resource "vkcs_networking_port" "main" {
+  name           = var.blank_name
+  network_id     = data.vkcs_networking_network.current.id
+  admin_state_up = "true"
+
+  fixed_ip {
+    subnet_id = var.vm_subnet_id
+  }
+}

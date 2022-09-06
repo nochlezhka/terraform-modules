@@ -30,6 +30,9 @@ variable "vm_flavor" {
 variable "vm_network_name" {
   type = string
 }
+variable "vm_subnet_id" {
+  type = string
+}
 variable "security_groups" {
   type    = list(string)
   default = ["default"]

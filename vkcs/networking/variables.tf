@@ -14,6 +14,7 @@ variable "subnets" {
       cidr_block      = string
       ip_version      = string
       dns_nameservers = list(any)
+      public          = bool
     }
   ))
 }
