@@ -2,7 +2,6 @@ resource "vkcs_networking_floatingip" "fip" {
   count = var.add_fip ? 1 : 0
 
   pool = "ext-net"
-  tags = var.tags
 }
 
 resource "vkcs_compute_floatingip_associate" "main" {
