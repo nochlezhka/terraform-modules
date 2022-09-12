@@ -13,35 +13,15 @@ resource "vkcs_networking_network" "main" {
 # subnets
 #
 resource "vkcs_networking_subnet" "main" {
-  for_each = {
-  for subnet in var.subnets :  subnet["name"] => subnet
-  }
-
-  name = each.key
-  tags = var.tags
+  name = var.subnets["name"]
 
   network_id      = vkcs_networking_network.main.id
-  cidr            = each.value["cidr_block"]
-  ip_version      = each.value["ip_version"]
-  dns_nameservers = each.value["dns_nameservers"]
-}
-
-#
-# router
-#
-resource "vkcs_networking_router" "main" {
-  name = var.blank_name
-  tags = var.tags
-
-  admin_state_up      = true
-  external_network_id = data.vkcs_networking_network.extnet.id
+  cidr            = var.subnets["cidr_block"]
+  ip_version      = var.subnets["ip_version"]
+  dns_nameservers = var.subnets["dns_nameservers"]
 }
 
 resource "vkcs_networking_router_interface" "main" {
-  for_each = {
-  for subnet in var.subnets : subnet["name"] => subnet if subnet["public"]
-  }
-
-  router_id = vkcs_networking_router.main.id
-  subnet_id = vkcs_networking_subnet.main[each.key].id
+  router_id = var.router_id[0]
+  subnet_id = vkcs_networking_subnet.main.id
 }
