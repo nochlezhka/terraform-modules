@@ -32,7 +32,7 @@ variable "cluster_size" {
 }
 variable "flavor" {
   type    = string
-  default = "Basic-1-2-20"
+  default = "Standard-2-8-20"
 }
 variable "volume_type" {
   type    = string

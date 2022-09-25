@@ -1,3 +1,4 @@
 data "vkcs_compute_flavor" "main" {
-  name = var.flavor
+  vcpus = 1
+  ram   = 1024
 }
