@@ -28,7 +28,7 @@ variable "keypair" {
 #
 variable "flavor" {
   type    = string
-  default = "Basic-1-2-20"
+  default = "Standard-2-8-50"
 }
 variable "volume_type" {
   type    = string
