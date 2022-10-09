@@ -58,7 +58,7 @@ variable "listener_id" {
 
 variable "lb_protocol_port" {
   type    = number
-  default = 80
+  default = 8080
 }
 
 variable "lb_monitor_enabled" {
