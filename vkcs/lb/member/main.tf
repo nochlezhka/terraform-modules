@@ -22,13 +22,10 @@ resource "vkcs_lb_pool" "main" {
 resource "vkcs_lb_monitor" "main" {
   count = var.lb_monitor_enabled ? 1 : 0
 
-  name           = var.lb_monitor_name
-  delay          = 5
-  max_retries    = 3
-  timeout        = 5
-  type           = "HTTP"
-  url_path       = "/"
-  http_method    = "GET"
-  expected_codes = "200"
-  pool_id        = vkcs_lb_pool.main.id
+  name        = var.lb_monitor_name
+  type        = "TCP"
+  delay       = 5
+  max_retries = 3
+  timeout     = 3
+  pool_id     = vkcs_lb_pool.main.id
 }
