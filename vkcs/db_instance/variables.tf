@@ -69,3 +69,31 @@ variable "root_password" {
   type    = string
   default = null
 }
+
+#
+# Backup
+#
+variable "bk_enabled" {
+  type    = bool
+  default = false
+}
+variable "bk_schedule_name" {
+  type    = string
+  default = null
+}
+variable "bk_start_hours" {
+  type    = string
+  default = null
+}
+variable "bk_start_minutes" {
+  type    = string
+  default = null
+}
+variable "bk_interval_hours" {
+  type    = number
+  default = null
+}
+variable "bk_keep_count" {
+  type    = number
+  default = null
+}

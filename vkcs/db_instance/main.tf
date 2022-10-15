@@ -27,4 +27,22 @@ resource "vkcs_db_instance" "main" {
 
   root_enabled  = var.root_enabled
   root_password = var.root_enabled ? var.root_password : null
+
+  dynamic "backup_schedule" {
+    for_each = var.bk_enabled ? [1] : []
+
+    content {
+      name           = var.bk_schedule_name
+      start_hours    = var.bk_start_hours
+      start_minutes  = var.bk_start_minutes
+      interval_hours = var.bk_interval_hours
+      keep_count     = var.bk_keep_count
+    }
+  }
+}
+
+resource "vkcs_db_backup" "main" {
+  name        = "db-backup"
+  dbms_id     = vkcs_db_instance.main.id
+  description = "tf-backup"
 }
