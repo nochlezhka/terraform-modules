@@ -69,3 +69,8 @@ variable "root_password" {
   type    = string
   default = null
 }
+variable "replica_of" {
+  description = "ID of the instance, that current instance is replica of."
+  type        = string
+  default     = null
+}

@@ -8,6 +8,7 @@ resource "vkcs_db_instance" "main" {
 
   keypair           = var.keypair
   flavor_id         = data.vkcs_compute_flavor.main.id
+  replica_of        = var.replica_of
   availability_zone = var.availability_zone
 
   # TODO: make a change to TF provider to change it to volume_size
