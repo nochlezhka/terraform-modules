@@ -22,7 +22,7 @@ variable "subnets" {
 variable "vkcs_services_access" {
   description = "Whether VKCS services access is enabled"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "router_id" {
