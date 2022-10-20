@@ -62,8 +62,8 @@ variable "floating_ip_enabled" {
 # misc
 #
 variable "root_enabled" {
-  type    = bool
-  default = false
+  type    = string
+  default = null
 }
 variable "root_password" {
   type    = string

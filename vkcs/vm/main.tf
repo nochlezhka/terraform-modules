@@ -11,7 +11,7 @@ resource "vkcs_compute_instance" "main" {
 
   user_data = file("${path.module}/files/cloud_init.cfg")
 
-  key_pair        = var.ssh_generate_keypair ? vkcs_compute_keypair.main[0].name : (var.ssh_use_existing_keypair ? var.ssh_existing_keypair_name : null )
+  key_pair        = var.ssh_generate_keypair ? vkcs_compute_keypair.main[0].name : (var.ssh_use_existing_keypair ? var.ssh_existing_keypair_name : null)
   security_groups = var.security_groups
 
   stop_before_destroy = true

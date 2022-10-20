@@ -16,7 +16,7 @@ variable "metadata" {
 # vm configuration
 #
 variable "vm_image_id" {
-  type    = string
+  type = string
   # NOTE: Ubuntu-20.04.1-202008
   default = "d853edd0-27b3-4385-a380-248ac8e40956"
 }

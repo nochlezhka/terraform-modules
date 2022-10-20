@@ -27,5 +27,5 @@ resource "vkcs_db_instance" "main" {
   }
 
   root_enabled  = var.root_enabled
-  root_password = var.root_enabled ? var.root_password : null
+  root_password = var.root_password
 }

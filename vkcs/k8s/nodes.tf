@@ -1,6 +1,6 @@
 resource "vkcs_kubernetes_node_group" "main" {
   for_each = {
-  for k, v  in var.node_pools : k => v if v["enabled"]
+    for k, v in var.node_pools : k => v if v["enabled"]
   }
 
   cluster_id = vkcs_kubernetes_cluster.main.id
