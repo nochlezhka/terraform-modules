@@ -6,7 +6,8 @@ resource "vkcs_compute_instance" "main" {
   tags     = var.tags
   metadata = var.metadata
 
-  flavor_id = data.vkcs_compute_flavor.main.id
+  flavor_id         = data.vkcs_compute_flavor.main.id
+  availability_zone = var.vm_availability_zone
 
   user_data = file("${path.module}/files/cloud_init.cfg")
 
@@ -19,10 +20,10 @@ resource "vkcs_compute_instance" "main" {
     uuid                  = data.vkcs_images_image.compute.id
     source_type           = "image"
     destination_type      = "volume"
-    volume_type           = "ceph-ssd"
-    volume_size           = 20
+    volume_type           = var.vm_volume_type
+    volume_size           = var.vm_volume_size
     boot_index            = 0
-    delete_on_termination = true
+    delete_on_termination = var.vm_disk_delete_on_termination
   }
 
   network {
