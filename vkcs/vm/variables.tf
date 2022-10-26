@@ -76,3 +76,7 @@ variable "ext_volume_size" {
   type    = number
   default = 1
 }
+variable "vm_image" {
+  type    = string
+  default = "Ubuntu-22.04-202208"
+}
