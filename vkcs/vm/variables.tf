@@ -6,9 +6,11 @@ variable "blank_name" {
   type        = string
 }
 variable "tags" {
+  type    = list(any)
   default = []
 }
 variable "metadata" {
+  type    = map(any)
   default = {}
 }
 
@@ -24,6 +26,23 @@ variable "vm_flavor" {
   type    = string
   default = "Basic-1-1-10"
 }
+variable "vm_availability_zone" {
+  type    = string
+  default = "MS1"
+}
+variable "vm_volume_type" {
+  type    = string
+  default = "ceph-ssd"
+}
+variable "vm_volume_size" {
+  type    = number
+  default = 20
+}
+variable "vm_disk_delete_on_termination" {
+  type    = bool
+  default = true
+}
+
 #
 # network
 #
