@@ -6,7 +6,6 @@ resource "vkcs_compute_instance" "main" {
   tags     = var.tags
   metadata = var.metadata
 
-  image_id  = var.vm_image_id
   flavor_id = data.vkcs_compute_flavor.main.id
 
   user_data = file("${path.module}/files/cloud_init.cfg")
@@ -15,6 +14,16 @@ resource "vkcs_compute_instance" "main" {
   security_groups = var.security_groups
 
   stop_before_destroy = true
+
+  block_device {
+    uuid                  = data.vkcs_images_image.compute.id
+    source_type           = "image"
+    destination_type      = "volume"
+    volume_type           = "ceph-ssd"
+    volume_size           = 20
+    boot_index            = 0
+    delete_on_termination = true
+  }
 
   network {
     name = var.vm_network_name
