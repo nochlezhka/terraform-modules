@@ -26,7 +26,7 @@ variable "vm_flavor" {
   type    = string
   default = "Basic-1-1-10"
 }
-variable "vm_availability_zone" {
+variable "availability_zone" {
   type    = string
   default = "MS1"
 }
@@ -41,6 +41,10 @@ variable "vm_volume_size" {
 variable "vm_disk_delete_on_termination" {
   type    = bool
   default = true
+}
+variable "block_device_enabled" {
+  type    = bool
+  default = false
 }
 
 #
@@ -85,15 +89,11 @@ variable "ext_volume_enabled" {
 }
 variable "ext_volume_type" {
   type    = string
-  default = "ssd"
-}
-variable "ext_volume_availability_zone" {
-  type    = string
-  default = "MS1"
+  default = "ceph-hdd"
 }
 variable "ext_volume_size" {
   type    = number
-  default = 1
+  default = 5
 }
 variable "vm_image" {
   type    = string

@@ -6,8 +6,10 @@ resource "vkcs_compute_instance" "main" {
   tags     = var.tags
   metadata = var.metadata
 
-  flavor_id         = data.vkcs_compute_flavor.main.id
-  availability_zone = var.vm_availability_zone
+  image_id  = var.vm_image_id
+  flavor_id = data.vkcs_compute_flavor.main.id
+
+  availability_zone = var.availability_zone
 
   user_data = file("${path.module}/files/cloud_init.cfg")
 
@@ -16,14 +18,18 @@ resource "vkcs_compute_instance" "main" {
 
   stop_before_destroy = true
 
-  block_device {
-    uuid                  = data.vkcs_images_image.compute.id
-    source_type           = "image"
-    destination_type      = "volume"
-    volume_type           = var.vm_volume_type
-    volume_size           = var.vm_volume_size
-    boot_index            = 0
-    delete_on_termination = var.vm_disk_delete_on_termination
+  dynamic "block_device" {
+    for_each = var.block_device_enabled ? ["1"] : []
+
+    content {
+      uuid                  = data.vkcs_images_image.compute.id
+      source_type           = "image"
+      destination_type      = "volume"
+      volume_type           = var.vm_volume_type
+      volume_size           = var.vm_volume_size
+      boot_index            = 0
+      delete_on_termination = var.vm_disk_delete_on_termination
+    }
   }
 
   network {
@@ -47,7 +53,7 @@ resource "vkcs_blockstorage_volume" "main" {
 
   name              = var.blank_name
   volume_type       = var.ext_volume_type
-  availability_zone = var.ext_volume_availability_zone
+  availability_zone = var.availability_zone
   size              = var.ext_volume_size
 
   metadata = {
