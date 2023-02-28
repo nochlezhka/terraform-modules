@@ -5,33 +5,81 @@ on:
       - main
   pull_request:
 
+env:
+  tf_version: 1.1.8
+  tflint_version: v0.39.3
+
+concurrency:
+  group: cicd-pipeline-${{ github.workflow }}-${{ github.event.pull_request.number || github.event.pull_request.head.ref || github.ref }}
+
 jobs:
-  terraform:
-    name: 'Terraform'
+  linters:
+    name: 'Terraform Linters'
     runs-on: ubuntu-20.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     defaults:
       run:
         shell: bash
-    env:
-      tf_version: 1.1.8
     steps:
-      - name: Check out code
+      -
+        name: Check out code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+      -
+        name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ env.tf_version }}
-
-      - name: Terraform fmt
-        id: fmt
-        run: terraform fmt --recursive -check=true --diff
-        continue-on-error: true
+          terraform_wrapper: false
+      -
+        name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v2
+        with:
+          tflint_version: v0.38.1
+      -
+        name: Setup TFLint cache plugin dir
+        uses: actions/cache@v3.0.7
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ hashFiles('.tflint.hcl') }}
+      -
+        name: Test code with TFLint
+        run: |
+          tflint --init
+          tflint -f compact
+      -
+        name: Test code with TFSec
+        uses: aquasecurity/tfsec-sarif-action@v0.1.0
+        with:
+          sarif_file: tfsec.sarif
+  semver:
+    name: 'Set code version tag'
+    runs-on: ubuntu-20.04
+    needs:
+      - linters
+    defaults:
+      run:
+        shell: bash
+    steps:
+      -
+        name: Check out code
+        uses: actions/checkout@v3
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+      -
+        name: Check out code
+        uses: actions/checkout@v3
+        if: github.event_name == 'push'
+        with:
+          fetch-depth: 0
       -
         name: Set application version
-        id: set_version
-        uses: kvendingoldo/semver-action@v1.10
+        uses: kvendingoldo/semver-action@v1.15
         with:
           primary_branch: main
