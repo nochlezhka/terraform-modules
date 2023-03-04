@@ -105,8 +105,6 @@ NGINX_HTTPS="${nginx_https}"
 TZ="${timezone}"
 
 SYMFONY_DEBUG="${symfony_debug}"
-LOGO_PATH="/var/www/symfony/web/uploads/logo.png"
-BIG_LOGO_PATH="/var/www/symfony/web/uploads/logo.png"
 
 APP_VER="${app_version}"
 
@@ -136,7 +134,11 @@ EMPLOYMENT_INSPECTION="${employment_inspection}"
 SANITATION_NAME="${sanitation_name}"
 SANITATION_ADDRESS="${sanitation_address}"
 SANITATION_TIME="${sanitation_time}"
+
 EOF
+
+[[ "${logo_path}" != "" ]] && echo 'LOGO_PATH="${logo_path}"' >> $${deploy_folder}/.env
+[[ "${big_logo_path}" != "" ]] && echo 'BIG_LOGO_PATH="${big_logo_path}"' >> $${deploy_folder}/.env
 
 #
 # Configure FluentBit log forwarding

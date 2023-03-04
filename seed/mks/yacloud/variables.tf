@@ -55,6 +55,12 @@ variable "seggroups" {
           port              = 8080
           predefined_target = "loadbalancer_healthchecks"
         }
+        "balancer" = {
+          protocol       = "tcp"
+          from_port      = 30000
+          to_port        = 32767
+          v4_cidr_blocks = ["0.0.0.0/0"]
+        }
       }
       egress_rules = {
         "all" = {
@@ -171,6 +177,9 @@ variable "mks_options" {
       nginx_https   = "on"
 
       external_db = false
+
+      logo_path     = ""
+      big_logo_path = ""
 
       org_name              = "test_long"
       org_name_short        = "test"

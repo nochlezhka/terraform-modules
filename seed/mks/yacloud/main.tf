@@ -163,6 +163,9 @@ module "vm_clients" {
       nginx_https   = var.mks_options[each.key]["nginx_https"],
       external_db   = var.mks_options[each.key]["external_db"],
 
+      logo_path     = var.mks_options[each.key]["logo_path"],
+      big_logo_path = var.mks_options[each.key]["big_logo_path"],
+
       org_name_short        = var.mks_options[each.key]["org_name_short"],
       org_name              = var.mks_options[each.key]["org_name"],
       org_description       = var.mks_options[each.key]["org_description"],
@@ -244,61 +247,13 @@ module "client_secrets" {
 #
 # loadbalancer
 #
-module "vm_clients_nlb" {
-  for_each = {
-  for k, v in var.vm_clients : k => v if v["enabled_nlb"]
-  }
-
-  source  = "terraform-yacloud-modules/nlb/yandex"
-  version = "0.2.0"
-
-  name   = format("%s-%s", module.naming.common_name, each.key)
-  labels = var.labels
-
-  region_id = "ru-central1"
-  # NOTE: we use the 1st subnet to reduce traffic price
-  subnet_id = module.network.private_subnets[0].id
-  type      = "external"
-
-  listeners = [
-    {
-      name                  = "app"
-      port                  = 8080
-      target_port           = 8080
-      external_address_spec = {
-        allocate_pip = true
-        pip_zone_id  = module.network.public_subnets[0].zone
-      }
-    }
-  ]
-
-  target_group_ids = [module.vm_clients[each.key].target_group_id]
-
-  health_check = {
-    name                = "app"
-    enabled             = true
-    interval            = 15
-    timeout             = 10
-    healthy_threshold   = 3
-    unhealthy_threshold = 3
-    tcp_options         = {
-      port = 8080
-    }
-  }
-
-  depends_on = [
-    module.network,
-    module.vm_clients
-  ]
-}
-
 module "vm_clients_alb" {
   for_each = {
   for k, v in var.vm_clients : k => v if v["enabled_alb"]
   }
 
   source  = "terraform-yacloud-modules/alb/yandex"
-  version = "0.1.0"
+  version = "0.6.0"
 
   name   = format("%s-%s", module.naming.common_name, each.key)
   labels = var.labels
@@ -319,39 +274,49 @@ module "vm_clients_alb" {
   ]
 
   listeners = {
-    https2 = {
+    https = {
       address = "ipv4pub"
       zone_id = "ru-central1-a"
       ports   = ["443"]
-      type    = "http2"
+      type    = "http"
       tls     = true
       cert    = {
-        type      = "existing"
-        ids       = [var.alb_cert_id]
-        domain    = var.alb_domain
+        type   = "existing"
+        ids    = [var.alb_cert_id]
+        domain = var.alb_domain
       }
       backend = {
         name             = "app"
         port             = 8080
         weight           = 100
-        http2            = true
+        http2            = false
         target_group_ids = [
           module.vm_clients[each.key].target_group_id
         ]
         health_check = {
-          timeout                 = "30s"
-          interval                = "60s"
+          timeout                 = "15s"
+          interval                = "5s"
           interval_jitter_percent = 0
-          healthy_threshold       = 1
-          unhealthy_threshold     = 1
+          healthy_threshold       = 3
+          unhealthy_threshold     = 10
           healthcheck_port        = 8080
           http                    = {
-            path = "/"
+            path = "/login"
           }
         }
       }
     }
-
+    redirect = {
+      address = "ipv4pub"
+      zone_id = "ru-central1-b"
+      ports   = ["80"]
+      type    = "redirect"
+      tls     = false
+      cert    = {
+        type = ""
+      }
+      backend = {}
+    }
   }
 
   depends_on = [
