@@ -152,6 +152,7 @@ module "vm_clients" {
 
       lockbox_secret_name = module.client_secrets[each.key].name,
       sa_name             = module.iam_accounts[each.key].name,
+      s3_mysql            = lookup(var.buckets, format("%s-%s", each.key, "mysql")) != null ? (var.buckets[format("%s-%s", each.key, "mysql")].enabled ? module.storage_buckets[format("%s-%s", each.key, "mysql")].name : "") : "",
       s3_data             = lookup(var.buckets, format("%s-%s", each.key, "data")) != null ? (var.buckets[format("%s-%s", each.key, "data")].enabled ? module.storage_buckets[format("%s-%s", each.key, "data")].name : "") : "",
       s3_backup           = lookup(var.buckets, format("%s-%s", each.key, "backup")) != null ? (var.buckets[format("%s-%s", each.key, "backup")].enabled ? module.storage_buckets[format("%s-%s", each.key, "backup")].name : "") : "",
 

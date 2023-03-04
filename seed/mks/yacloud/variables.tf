@@ -99,13 +99,19 @@ variable "iam" {
 #
 variable "buckets" {
   default = {
-    "app01-data" = {
+    app01-mysql = {
       enabled           = true
       storage_class     = "STANDARD"
       max_size          = 5368709120
       enable_versioning = false
     }
-    "app01-backup" = {
+    app01-data = {
+      enabled           = true
+      storage_class     = "STANDARD"
+      max_size          = 5368709120
+      enable_versioning = false
+    }
+    app01-backup = {
       enabled           = true
       storage_class     = "COLD"
       max_size          = 5368709120

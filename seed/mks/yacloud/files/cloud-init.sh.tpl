@@ -108,6 +108,9 @@ SYMFONY_DEBUG="${symfony_debug}"
 
 APP_VER="${app_version}"
 
+LOGO_PATH="${logo_path}"
+BIG_LOGO_PATH="${big_logo_path}"
+
 DB_HOST="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="db_host").text_value')"
 DB_PORT="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="db_port").text_value')"
 DB_NAME="$${db_name}"
@@ -134,11 +137,7 @@ EMPLOYMENT_INSPECTION="${employment_inspection}"
 SANITATION_NAME="${sanitation_name}"
 SANITATION_ADDRESS="${sanitation_address}"
 SANITATION_TIME="${sanitation_time}"
-
 EOF
-
-[[ "${logo_path}" != "" ]] && echo 'LOGO_PATH="${logo_path}"' >> $${deploy_folder}/.env
-[[ "${big_logo_path}" != "" ]] && echo 'BIG_LOGO_PATH="${big_logo_path}"' >> $${deploy_folder}/.env
 
 #
 # Configure FluentBit log forwarding
@@ -227,6 +226,7 @@ else
 fi
 
 sleep 45
+docker start mks-db
 
 docker exec mks-php ./app/console doctrine:migrations:migrate --no-interaction --env=prod
 
