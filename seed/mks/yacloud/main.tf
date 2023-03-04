@@ -26,9 +26,8 @@ module "network" {
 module "security_groups" {
   for_each = local.security_groups
 
-  source = "/Users/asharov/projects/personal/nochlezhka/yandex/terraform-yandex-security-group"
-  #source  = "terraform-yacloud-modules/security-group/yandex"
-  #version = "0.2.0"
+  source  = "terraform-yacloud-modules/security-group/yandex"
+  version = "0.5.0"
 
   blank_name = format("%s-%s", module.naming.common_name, each.key)
   labels     = var.labels

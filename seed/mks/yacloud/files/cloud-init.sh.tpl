@@ -30,8 +30,8 @@ sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
 #
 # Copy MKS sources
 #
-tag=$(echo $${app_version} | sed 's/-/\//g')
-git clone --depth 1 -b 'rc/0.29.0' https://github.com/nochlezhka/mks.git "$${source_folder}"
+tag=$(echo ${app_version} | sed 's/-/\//g')
+git clone --depth 1 -b "$${tag}" https://github.com/nochlezhka/mks.git "$${source_folder}"
 cp "$${source_folder}/docker-compose.yml" "$${deploy_folder}/docker-compose.yml"
 
 #
