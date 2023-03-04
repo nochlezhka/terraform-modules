@@ -5,6 +5,7 @@ home="/home/ubuntu"
 app_root_folder="/opt/homeless/mks"
 source_folder="$${app_root_folder}/sources"
 deploy_folder="$${app_root_folder}/deploy"
+mysql_folder="$${deploy_folder}/storage/mysql_data"
 s3_data_folder="$${deploy_folder}/storage/uploads"
 s3_backup_folder="$${deploy_folder}/storage/backup"
 lockbox_secret_name="${lockbox_secret_name}"
@@ -23,7 +24,7 @@ sudo chown -R ubuntu:ubuntu "$${home}/.config/"
 #
 # Prepare filesystem
 #
-sudo mkdir -p "$${app_root_folder}" "$${source_folder}" "$${deploy_folder}" "$${s3_data_folder}" "$${s3_backup_folder}"
+sudo mkdir -p "$${app_root_folder}" "$${source_folder}" "$${deploy_folder}" "$${mysql_folder}" "$${s3_data_folder}" "$${s3_backup_folder}"
 sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
 
 #
@@ -56,6 +57,14 @@ s3fs ${s3_data} "$${s3_data_folder}" \
     -o url=https://storage.yandexcloud.net \
     -o use_path_request_style \
     -o allow_other
+
+if [[ "${s3_mysql}" != "" ]]; then
+    s3fs ${s3_mysql} "$${mysql_folder}" \
+        -o passwd_file="$${s3fs_passwd_path}" \
+        -o url=https://storage.yandexcloud.net \
+        -o use_path_request_style \
+        -o allow_other
+fi
 
 #
 # Create backup task

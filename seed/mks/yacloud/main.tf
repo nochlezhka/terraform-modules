@@ -23,11 +23,12 @@ module "network" {
   private_subnets = var.subnets["private"]
 }
 
-module "seggroups" {
-  for_each = var.seggroups
+module "security_groups" {
+  for_each = local.security_groups
 
-  source  = "terraform-yacloud-modules/security-group/yandex"
-  version = "0.2.0"
+  source = "/Users/asharov/projects/personal/nochlezhka/yandex/terraform-yandex-security-group"
+  #source  = "terraform-yacloud-modules/security-group/yandex"
+  #version = "0.2.0"
 
   blank_name = format("%s-%s", module.naming.common_name, each.key)
   labels     = var.labels
@@ -68,7 +69,7 @@ module "iam_accounts" {
 #
 module "kms_bucket_master_key" {
   for_each = {
-  for k, v in var.buckets : k => v if v["enabled"]
+  for k, v in local.buckets : k => v if v["enabled"]
   }
 
   source  = "terraform-yacloud-modules/kms/yandex"
@@ -80,7 +81,7 @@ module "kms_bucket_master_key" {
 
 module "storage_buckets" {
   for_each = {
-  for k, v in var.buckets : k => v if v["enabled"]
+  for k, v in local.buckets : k => v if v["enabled"]
   }
 
   source  = "terraform-yacloud-modules/storage-bucket/yandex"
@@ -100,7 +101,7 @@ module "storage_buckets" {
 #
 resource "yandex_logging_group" "vm_clients" {
   for_each = {
-  for k, v in var.vm_clients : k => v if v["enabled"] && v["log_group"]["enabled"]
+  for k, v in var.vms : k => v if v["enabled"] && v["log_group"]["enabled"]
   }
 
   name   = format("%s-%s", module.naming.common_name, each.key)
@@ -109,9 +110,9 @@ resource "yandex_logging_group" "vm_clients" {
   retention_period = each.value["log_group"]["retention_period"]
 }
 
-module "vm_clients" {
+module "vms" {
   for_each = {
-  for k, v in var.vm_clients : k => v if v["enabled"]
+  for k, v in var.vms : k => v if v["enabled"]
   }
 
   source  = "terraform-yacloud-modules/instance-group/yandex"
@@ -128,7 +129,7 @@ module "vm_clients" {
   subnet_ids         = [module.network.public_subnets[0].id]
   enable_nat         = each.value["enable_nat"]
   security_group_ids = [
-    module.seggroups["vms"].id
+    module.security_groups["mks"].id
   ]
 
   enable_nlb_integration = false
@@ -150,38 +151,38 @@ module "vm_clients" {
       log_group_enabled = each.value["log_group"]["enabled"],
       log_group_id      = each.value["log_group"]["enabled"] ? yandex_logging_group.vm_clients[each.key].id : "",
 
-      lockbox_secret_name = module.client_secrets[each.key].name,
+      lockbox_secret_name = module.mks_secrets.name,
       sa_name             = module.iam_accounts[each.key].name,
-      s3_mysql            = lookup(var.buckets, format("%s-%s", each.key, "mysql")) != null ? (var.buckets[format("%s-%s", each.key, "mysql")].enabled ? module.storage_buckets[format("%s-%s", each.key, "mysql")].name : "") : "",
-      s3_data             = lookup(var.buckets, format("%s-%s", each.key, "data")) != null ? (var.buckets[format("%s-%s", each.key, "data")].enabled ? module.storage_buckets[format("%s-%s", each.key, "data")].name : "") : "",
-      s3_backup           = lookup(var.buckets, format("%s-%s", each.key, "backup")) != null ? (var.buckets[format("%s-%s", each.key, "backup")].enabled ? module.storage_buckets[format("%s-%s", each.key, "backup")].name : "") : "",
+      s3_mysql            = lookup(local.buckets, "mysql") != null ? (local.buckets["mysql"].enabled ? module.storage_buckets["mysql"].name : "") : "",
+      s3_data             = lookup(local.buckets, "data") != null ? (local.buckets["data"].enabled ? module.storage_buckets["data"].name : "") : "",
+      s3_backup           = lookup(local.buckets, "backup") != null ? (local.buckets["backup"].enabled ? module.storage_buckets["backup"].name : "") : "",
 
       env_abbr    = var.env_abbr,
-      app_version = var.mks_options[each.key]["app_version"],
+      app_version = var.mks_options["app_version"],
 
-      timezone      = var.mks_options[each.key]["timezone"],
-      symfony_debug = var.mks_options[each.key]["symfony_debug"],
-      nginx_https   = var.mks_options[each.key]["nginx_https"],
-      external_db   = var.mks_options[each.key]["external_db"],
+      timezone      = var.mks_options["timezone"],
+      symfony_debug = var.mks_options["symfony_debug"],
+      nginx_https   = var.mks_options["nginx_https"],
+      external_db   = var.mks_options["external_db"],
 
-      logo_path     = var.mks_options[each.key]["logo_path"],
-      big_logo_path = var.mks_options[each.key]["big_logo_path"],
+      logo_path     = var.mks_options["logo_path"],
+      big_logo_path = var.mks_options["big_logo_path"],
 
-      org_name_short        = var.mks_options[each.key]["org_name_short"],
-      org_name              = var.mks_options[each.key]["org_name"],
-      org_description       = var.mks_options[each.key]["org_description"],
-      org_description_short = var.mks_options[each.key]["org_description_short"],
-      org_city              = var.mks_options[each.key]["org_city"],
-      org_contacts_full     = var.mks_options[each.key]["org_contacts_full"],
-      dispensary_name       = var.mks_options[each.key]["dispensary_name"],
-      dispensary_address    = var.mks_options[each.key]["dispensary_address"],
-      dispensary_phone      = var.mks_options[each.key]["dispensary_phone"],
-      employment_name       = var.mks_options[each.key]["employment_name"],
-      employment_address    = var.mks_options[each.key]["employment_address"],
-      employment_inspection = var.mks_options[each.key]["employment_inspection"],
-      sanitation_name       = var.mks_options[each.key]["sanitation_name"],
-      sanitation_address    = var.mks_options[each.key]["sanitation_address"],
-      sanitation_time       = var.mks_options[each.key]["sanitation_time"]
+      org_name_short        = var.mks_options["org_name_short"],
+      org_name              = var.mks_options["org_name"],
+      org_description       = var.mks_options["org_description"],
+      org_description_short = var.mks_options["org_description_short"],
+      org_city              = var.mks_options["org_city"],
+      org_contacts_full     = var.mks_options["org_contacts_full"],
+      dispensary_name       = var.mks_options["dispensary_name"],
+      dispensary_address    = var.mks_options["dispensary_address"],
+      dispensary_phone      = var.mks_options["dispensary_phone"],
+      employment_name       = var.mks_options["employment_name"],
+      employment_address    = var.mks_options["employment_address"],
+      employment_inspection = var.mks_options["employment_inspection"],
+      sanitation_name       = var.mks_options["sanitation_name"],
+      sanitation_address    = var.mks_options["sanitation_address"],
+      sanitation_time       = var.mks_options["sanitation_time"]
     }
   )
 
@@ -203,7 +204,7 @@ module "vm_clients" {
 
   depends_on = [
     module.network,
-    module.seggroups
+    module.security_groups
   ]
 }
 
@@ -212,7 +213,7 @@ module "vm_clients" {
 #
 module "vm_ssh_keys" {
   for_each = {
-  for k, v in var.vm_clients : k => v if v["enabled"] && v["generate_ssh_key"]
+  for k, v in var.vms : k => v if v["enabled"] && v["generate_ssh_key"]
   }
 
   source  = "terraform-yacloud-modules/lockbox/yandex"
@@ -222,25 +223,21 @@ module "vm_ssh_keys" {
   labels = var.labels
 
   entries = {
-    "ssh-prv" : module.vm_clients[each.key].ssh_key_prv
-    "ssh-pub" : module.vm_clients[each.key].ssh_key_pub
+    "ssh-prv" : module.vms[each.key].ssh_key_prv
+    "ssh-pub" : module.vms[each.key].ssh_key_pub
   }
 
   deletion_protection = false
 }
 
-module "client_secrets" {
-  for_each = {
-  for k, v in var.mks_secrets : k => v
-  }
-
+module "mks_secrets" {
   source  = "terraform-yacloud-modules/lockbox/yandex"
   version = "0.2.0"
 
-  name   = format("%s-%s-mks", module.naming.common_name, each.key)
+  name   = format("%s-mks", module.naming.common_name)
   labels = var.labels
 
-  entries = each.value
+  entries = var.mks_secrets
 
   deletion_protection = false
 }
@@ -248,22 +245,20 @@ module "client_secrets" {
 #
 # loadbalancer
 #
-module "vm_clients_alb" {
-  for_each = {
-  for k, v in var.vm_clients : k => v if v["enabled_alb"]
-  }
+module "mks_alb" {
+  count = var.alb_enabled ? 1 : 0
 
   source  = "terraform-yacloud-modules/alb/yandex"
   version = "0.6.0"
 
-  name   = format("%s-%s", module.naming.common_name, each.key)
+  name   = format("%s-mks", module.naming.common_name)
   labels = var.labels
 
   region_id = "ru-central1"
 
   network_id         = module.network.vpc_id
   security_group_ids = [
-    module.seggroups["vms"].id
+    module.security_groups["gw"].id
   ]
 
   subnets = [
@@ -292,7 +287,7 @@ module "vm_clients_alb" {
         weight           = 100
         http2            = false
         target_group_ids = [
-          module.vm_clients[each.key].target_group_id
+          module.vms["mks"].target_group_id
         ]
         health_check = {
           timeout                 = "15s"
@@ -322,6 +317,6 @@ module "vm_clients_alb" {
 
   depends_on = [
     module.network,
-    module.vm_clients
+    module.vms
   ]
 }

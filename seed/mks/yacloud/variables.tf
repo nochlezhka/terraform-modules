@@ -26,36 +26,49 @@ variable "subnets" {
   }
 }
 
-variable "seggroups" {
+variable "security_groups" {
   default = {
-    "vms" = {
+    mks = {
       ingress_rules = {
-        "ssh2internet" = {
+        "ssh_to_internet" = {
           protocol       = "tcp"
           port           = 22
           v4_cidr_blocks = ["0.0.0.0/0"]
         }
-        "http2internet" = {
-          protocol       = "tcp"
-          port           = 8080
-          v4_cidr_blocks = ["0.0.0.0/0"]
-        }
-        "https2internet" = {
-          protocol       = "tcp"
-          port           = 443
-          v4_cidr_blocks = ["0.0.0.0/0"]
-        }
-        "http2self" = {
+        "8080_to_self" = {
           protocol          = "tcp"
           port              = 8080
           predefined_target = "self_security_group"
         }
-        "http2balancer" = {
-          protocol          = "tcp"
-          port              = 8080
-          predefined_target = "loadbalancer_healthchecks"
+        "8080_to_gw" = {
+          protocol            = "tcp"
+          port                = 8080
+          security_group_name = "gw"
         }
-        "balancer" = {
+      }
+      egress_rules = {
+        "all" = {
+          protocol       = "tcp"
+          from_port      = 0
+          to_port        = 65535
+          v4_cidr_blocks = ["0.0.0.0/0"]
+        }
+      }
+    }
+
+    gw = {
+      ingress_rules = {
+        "https_to_internet" = {
+          protocol       = "tcp"
+          port           = 443
+          v4_cidr_blocks = ["0.0.0.0/0"]
+        }
+        "http_to_internet" = {
+          protocol       = "tcp"
+          port           = 80
+          v4_cidr_blocks = ["0.0.0.0/0"]
+        }
+        "balancer_health_checks" = {
           protocol       = "tcp"
           from_port      = 30000
           to_port        = 32767
@@ -71,10 +84,6 @@ variable "seggroups" {
         }
       }
     }
-    "gw" = {
-      ingress_rules = {}
-      egress_rules  = {}
-    }
   }
 }
 
@@ -83,7 +92,7 @@ variable "seggroups" {
 #
 variable "iam" {
   default = {
-    "app01" = {
+    mks = {
       enabled                  = true
       folder_roles             = ["editor", "lockbox.payloadViewer", "lockbox.viewer"]
       cloud_roles              = ["editor"]
@@ -99,19 +108,13 @@ variable "iam" {
 #
 variable "buckets" {
   default = {
-    app01-mysql = {
+    data = {
       enabled           = true
       storage_class     = "STANDARD"
       max_size          = 5368709120
       enable_versioning = false
     }
-    app01-data = {
-      enabled           = true
-      storage_class     = "STANDARD"
-      max_size          = 5368709120
-      enable_versioning = false
-    }
-    app01-backup = {
+    backup = {
       enabled           = true
       storage_class     = "COLD"
       max_size          = 5368709120
@@ -123,9 +126,9 @@ variable "buckets" {
 #
 # workloads
 #
-variable "vm_clients" {
+variable "vms" {
   default = {
-    "app01" = {
+    mks = {
       enabled = true
 
       enabled_nlb = false
@@ -160,6 +163,11 @@ variable "vm_clients" {
 #
 # loadbalancer
 #
+variable "alb_enabled" {
+  type    = bool
+  default = true
+}
+
 variable "alb_domain" {
   type    = string
   default = null
@@ -175,46 +183,42 @@ variable "alb_cert_id" {
 #
 variable "mks_options" {
   default = {
-    "app01" = {
-      app_version = "rc-0.29.0"
+    app_version = "rc-0.29.0"
 
-      timezone      = "Etc/GMT-3"
-      symfony_debug = 1
-      nginx_https   = "on"
+    timezone      = "Etc/GMT-3"
+    symfony_debug = 1
+    nginx_https   = "on"
 
-      external_db = false
+    external_db = false
 
-      logo_path     = ""
-      big_logo_path = ""
+    logo_path     = ""
+    big_logo_path = ""
 
-      org_name              = "test_long"
-      org_name_short        = "test"
-      org_description       = "org_test_dsc"
-      org_description_short = "org_test_dsc_short"
-      org_city              = ""
-      org_contacts_full     = ""
-      dispensary_name       = ""
-      dispensary_address    = ""
-      dispensary_phone      = ""
-      employment_name       = ""
-      employment_address    = ""
-      employment_inspection = ""
-      sanitation_name       = ""
-      sanitation_address    = ""
-      sanitation_time       = ""
-    }
+    org_name              = "test_long"
+    org_name_short        = "test"
+    org_description       = "org_test_dsc"
+    org_description_short = "org_test_dsc_short"
+    org_city              = ""
+    org_contacts_full     = ""
+    dispensary_name       = ""
+    dispensary_address    = ""
+    dispensary_phone      = ""
+    employment_name       = ""
+    employment_address    = ""
+    employment_inspection = ""
+    sanitation_name       = ""
+    sanitation_address    = ""
+    sanitation_time       = ""
   }
 }
 
 variable "mks_secrets" {
   default = {
-    "app01" = {
-      admin_password = "password"
-      db_host        = "db"
-      db_port        = 3306
-      db_name        = "homeless"
-      db_user        = "homeless"
-      db_password    = "homeless"
-    }
+    admin_password = "password"
+    db_host        = "db"
+    db_port        = 3306
+    db_name        = "homeless"
+    db_user        = "homeless"
+    db_password    = "homeless"
   }
 }
