@@ -43,7 +43,17 @@ variable "security_groups" {
         "8080_to_gw" = {
           protocol            = "tcp"
           port                = 8080
-          security_group_name = "gw"
+          v4_cidr_blocks = ["0.0.0.0/0"]
+        }
+        "8443_to_self" = {
+          protocol          = "tcp"
+          port              = 8443
+          predefined_target = "self_security_group"
+        }
+        "8443_to_gw" = {
+          protocol            = "tcp"
+          port                = 8443
+          v4_cidr_blocks = ["0.0.0.0/0"]
         }
       }
       egress_rules = {
@@ -123,64 +133,48 @@ variable "buckets" {
   }
 }
 
-#
-# workloads
-#
-variable "vms" {
-  default = {
-    mks = {
-      enabled = true
-
-      enabled_nlb = false
-      enabled_alb = true
-
-      extra_labels = {}
-      image_family = "container-optimized-image"
-
-      platform_id   = "standard-v3"
-      cores         = 2
-      memory        = 2
-      core_fraction = 100
-      preemptible   = true
-
-      log_group = {
-        enabled          = true
-        retention_period = "72h"
-      }
-
-      enable_nat       = true
-      generate_ssh_key = true
-      ssh_user         = "ubuntu"
-
-      boot_disk_initialize_params = {
-        size = 30
-        type = "network-hdd"
-      }
-    }
-  }
-}
 
 #
-# loadbalancer
+# feature flags
 #
-variable "alb_enabled" {
+variable "nlb_enabled" {
   type    = bool
   default = true
 }
 
-variable "alb_domain" {
-  type    = string
-  default = null
-}
-
-variable "alb_cert_id" {
-  type    = string
-  default = null
-}
 
 #
 # MKS options
 #
+variable "mks_logging" {
+  default = {
+    enabled          = true
+    retention_period = "72h"
+  }
+}
+
+variable "mks_vm_options" {
+  default = {
+    extra_labels = {}
+    image_family = "container-optimized-image"
+
+    platform_id   = "standard-v3"
+    cores         = 2
+    memory        = 2
+    core_fraction = 100
+    preemptible   = true
+
+    enable_nat       = true
+    generate_ssh_key = true
+    ssh_user         = "ubuntu"
+
+    boot_disk_initialize_params = {
+      size = 30
+      type = "network-hdd"
+    }
+  }
+}
+
 variable "mks_options" {
   default = {
     app_version = "rc-0.29.0"

@@ -98,60 +98,54 @@ module "storage_buckets" {
 #
 # workloads
 #
-resource "yandex_logging_group" "vm_clients" {
-  for_each = {
-  for k, v in var.vms : k => v if v["enabled"] && v["log_group"]["enabled"]
-  }
+resource "yandex_logging_group" "mks" {
+  count = var.mks_logging["enabled"] ? 1 : 0
 
-  name   = format("%s-%s", module.naming.common_name, each.key)
+  name   = format("%s-mks", module.naming.common_name)
   labels = var.labels
 
-  retention_period = each.value["log_group"]["retention_period"]
+  retention_period = var.mks_logging["retention_period"]
 }
 
-module "vms" {
-  for_each = {
-  for k, v in var.vms : k => v if v["enabled"]
-  }
-
+module "mks_vm" {
   source  = "terraform-yacloud-modules/instance-group/yandex"
   version = "0.3.0"
 
   # NOTE: we use the one AZ instead of var.azs to reduce cloud price
   zones = ["ru-central1-a"]
 
-  name   = format("%s-%s", module.naming.common_name, each.key)
-  labels = merge(var.labels, each.value["extra_labels"])
+  name   = format("%s-mks", module.naming.common_name)
+  labels = merge(var.labels, var.mks_vm_options["extra_labels"])
 
   # NOTE: we use the 1st subnet to reduce traffic price
   network_id         = module.network.vpc_id
   subnet_ids         = [module.network.public_subnets[0].id]
-  enable_nat         = each.value["enable_nat"]
+  enable_nat         = var.mks_vm_options["enable_nat"]
   security_group_ids = [
     module.security_groups["mks"].id
   ]
 
-  enable_nlb_integration = false
-  enable_alb_integration = true
+  enable_nlb_integration = var.nlb_enabled
+  enable_alb_integration = false
 
-  platform_id   = each.value["platform_id"]
-  cores         = each.value["cores"]
-  memory        = each.value["memory"]
-  core_fraction = each.value["core_fraction"]
-  preemptible   = each.value["preemptible"]
+  platform_id   = var.mks_vm_options["platform_id"]
+  cores         = var.mks_vm_options["cores"]
+  memory        = var.mks_vm_options["memory"]
+  core_fraction = var.mks_vm_options["core_fraction"]
+  preemptible   = var.mks_vm_options["preemptible"]
 
-  image_family = each.value["image_family"]
+  image_family = var.mks_vm_options["image_family"]
 
-  service_account_id = module.iam_accounts[each.key].id
+  service_account_id = module.iam_accounts["mks"].id
 
   user_data = templatefile(
     "${path.module}/files/cloud-init.sh.tpl",
     {
-      log_group_enabled = each.value["log_group"]["enabled"],
-      log_group_id      = each.value["log_group"]["enabled"] ? yandex_logging_group.vm_clients[each.key].id : "",
+      log_group_enabled = var.mks_logging["enabled"],
+      log_group_id      = var.mks_logging["enabled"] ? yandex_logging_group.mks[0].id : "",
 
       lockbox_secret_name = module.mks_secrets.name,
-      sa_name             = module.iam_accounts[each.key].name,
+      sa_name             = module.iam_accounts["mks"].name,
       s3_mysql            = lookup(local.buckets, "mysql") != null ? (local.buckets["mysql"].enabled ? module.storage_buckets["mysql"].name : "") : "",
       s3_data             = lookup(local.buckets, "data") != null ? (local.buckets["data"].enabled ? module.storage_buckets["data"].name : "") : "",
       s3_backup           = lookup(local.buckets, "backup") != null ? (local.buckets["backup"].enabled ? module.storage_buckets["backup"].name : "") : "",
@@ -185,9 +179,9 @@ module "vms" {
     }
   )
 
-  generate_ssh_key            = each.value["generate_ssh_key"]
-  ssh_user                    = each.value["ssh_user"]
-  boot_disk_initialize_params = each.value["boot_disk_initialize_params"]
+  generate_ssh_key            = var.mks_vm_options["generate_ssh_key"]
+  ssh_user                    = var.mks_vm_options["ssh_user"]
+  boot_disk_initialize_params = var.mks_vm_options["boot_disk_initialize_params"]
 
   max_checking_health_duration = null
   health_check                 = {
@@ -210,25 +204,6 @@ module "vms" {
 #
 # Secrets
 #
-module "vm_ssh_keys" {
-  for_each = {
-  for k, v in var.vms : k => v if v["enabled"] && v["generate_ssh_key"]
-  }
-
-  source  = "terraform-yacloud-modules/lockbox/yandex"
-  version = "0.2.0"
-
-  name   = format("%s-%s-ssh", module.naming.common_name, each.key)
-  labels = var.labels
-
-  entries = {
-    "ssh-prv" : module.vms[each.key].ssh_key_prv
-    "ssh-pub" : module.vms[each.key].ssh_key_pub
-  }
-
-  deletion_protection = false
-}
-
 module "mks_secrets" {
   source  = "terraform-yacloud-modules/lockbox/yandex"
   version = "0.2.0"
@@ -236,7 +211,13 @@ module "mks_secrets" {
   name   = format("%s-mks", module.naming.common_name)
   labels = var.labels
 
-  entries = var.mks_secrets
+  entries = var.mks_vm_options["generate_ssh_key"] ? merge(
+    var.mks_secrets,
+    {
+      "ssh-prv" : module.mks_vm.ssh_key_prv
+      "ssh-pub" : module.mks_vm.ssh_key_pub
+    }
+  ) : var.mks_secrets
 
   deletion_protection = false
 }
@@ -244,78 +225,52 @@ module "mks_secrets" {
 #
 # loadbalancer
 #
-module "mks_alb" {
-  count = var.alb_enabled ? 1 : 0
+module "lb" {
+  count = var.nlb_enabled ? 1 : 0
 
-  source  = "terraform-yacloud-modules/alb/yandex"
-  version = "0.6.0"
+  source = "/Users/asharov/projects/personal/nochlezhka/yandex/terraform-yandex-nlb"
+  #source  = "terraform-yacloud-modules/nlb/yandex"
+  #version = "0.2.0"
 
   name   = format("%s-mks", module.naming.common_name)
   labels = var.labels
 
   region_id = "ru-central1"
+  # NOTE: we use the 1st subnet to reduce traffic price
+  subnet_id = module.network.private_subnets[0].id
+  type      = "external"
 
-  network_id         = module.network.vpc_id
-  security_group_ids = [
-    module.security_groups["gw"].id
-  ]
-
-  subnets = [
+  listeners = [
     {
-      zone_id         = module.network.public_subnets[0].zone
-      id              = module.network.public_subnets[0].id
-      disable_traffic = false
+      name        = "http"
+      port        = 80
+      target_port = 8080
+      is_public   = true
+    },
+    {
+      name        = "https"
+      port        = 443
+      target_port = 8443
+      is_public   = true
     }
   ]
 
-  listeners = {
-    https = {
-      address = "ipv4pub"
-      zone_id = "ru-central1-a"
-      ports   = ["443"]
-      type    = "http"
-      tls     = true
-      cert    = {
-        type   = "existing"
-        ids    = [var.alb_cert_id]
-        domain = var.alb_domain
-      }
-      backend = {
-        name             = "app"
-        port             = 8080
-        weight           = 100
-        http2            = false
-        target_group_ids = [
-          module.vms["mks"].target_group_id
-        ]
-        health_check = {
-          timeout                 = "15s"
-          interval                = "5s"
-          interval_jitter_percent = 0
-          healthy_threshold       = 3
-          unhealthy_threshold     = 10
-          healthcheck_port        = 8080
-          http                    = {
-            path = "/login"
-          }
-        }
-      }
-    }
-    redirect = {
-      address = "ipv4pub"
-      zone_id = "ru-central1-b"
-      ports   = ["80"]
-      type    = "redirect"
-      tls     = false
-      cert    = {
-        type = ""
-      }
-      backend = {}
+  target_group_ids = [module.mks_vm.target_group_id]
+
+  health_check = {
+    name                = "app"
+    enabled             = true
+    interval            = 10
+    timeout             = 5
+    healthy_threshold   = 3
+    unhealthy_threshold = 10
+    tcp_options         = {
+      port = 8080
     }
   }
 
   depends_on = [
     module.network,
-    module.vms
+    module.mks_vm
   ]
 }

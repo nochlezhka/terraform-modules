@@ -2,16 +2,23 @@
 set -x
 
 home="/home/ubuntu"
+lockbox_secret_name="${lockbox_secret_name}"
+domain
+certbot_email=""
+certbot_domain=""
+
+#
+# MKS folders
+#
 app_root_folder="/opt/homeless/mks"
 source_folder="$${app_root_folder}/sources"
 deploy_folder="$${app_root_folder}/deploy"
 mysql_folder="$${deploy_folder}/storage/mysql_data"
-s3_data_folder="$${deploy_folder}/storage/uploads"
+s3_data_folder="$${deploy_folder}/storage/data"
 s3_backup_folder="$${deploy_folder}/storage/backup"
-lockbox_secret_name="${lockbox_secret_name}"
 
 #
-# Install software
+# Install VM software
 #
 sudo apt-get update -y
 sudo apt-get install -y tree s3fs
@@ -25,14 +32,17 @@ sudo chown -R ubuntu:ubuntu "$${home}/.config/"
 # Prepare filesystem
 #
 sudo mkdir -p "$${app_root_folder}" "$${source_folder}" "$${deploy_folder}" "$${mysql_folder}" "$${s3_data_folder}" "$${s3_backup_folder}"
+sudo mkdir -p "$${s3_data_folder}/uploads" "$${s3_data_folder}/certbot" "$${s3_data_folder}/letsencrypt"
 sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
 
 #
 # Copy MKS sources
 #
 tag=$(echo ${app_version} | sed 's/-/\//g')
+# TODO
+tag="feat/add-certbot"
 git clone --depth 1 -b "$${tag}" https://github.com/nochlezhka/mks.git "$${source_folder}"
-cp "$${source_folder}/docker-compose.yml" "$${deploy_folder}/docker-compose.yml"
+cp "$${source_folder}/deploy/docker-compose.yml" "$${deploy_folder}/docker-compose.yml"
 
 #
 # Mount S3 buckets
@@ -67,41 +77,6 @@ if [[ "${s3_mysql}" != "" ]]; then
 fi
 
 #
-# Create backup task
-#
-cat <<EOF > "$${deploy_folder}/s3_backup.sh"
-#!/bin/bash
-cp -R "$${s3_data_folder}" "$${s3_backup_folder}/\$(date +%Y%m%d_%H%M%S)"
-ls -tr $${s3_backup_folder} | head -n -5 | xargs --no-run-if-empty rm -r
-EOF
-
-sudo chmod 755 "$${deploy_folder}/s3_backup.sh"
-sudo chown ubuntu:ubuntu "$${deploy_folder}/s3_backup.sh"
-
-cat <<EOF > /etc/systemd/system/mks_s3_backup.timer
-[Unit]
-Requires=mks_s3_backup.service
-[Timer]
-Unit=mks_s3_backup.service
-OnCalendar=Weekly
-[Install]
-WantedBy=timers.target
-EOF
-
-cat <<EOF > /etc/systemd/system/mks_s3_backup.service
-[Unit]
-Wants=mks_s3_backup.timer
-[Service]
-Type=oneshot
-ExecStart=$${deploy_folder}/s3_backup.sh
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload
-sudo systemctl start mks_s3_backup.service
-
-#
 # Create MKS configuration file
 #
 db_name="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="db_name").text_value')"
@@ -109,12 +84,9 @@ db_user="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_se
 db_password="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="db_password").text_value')"
 
 cat <<EOF > $${deploy_folder}/.env
-NGINX_HTTPS="${nginx_https}"
-
 TZ="${timezone}"
 
 SYMFONY_DEBUG="${symfony_debug}"
-
 APP_VER="${app_version}"
 
 LOGO_PATH="${logo_path}"
@@ -193,23 +165,6 @@ EOF
   Types  code:integer
 EOF
 
-    cat <<EOF >> "$${deploy_folder}/docker-compose.yml"
-  fluentbit:
-    container_name: fluentbit
-    image: cr.yandex/yc/fluent-bit-plugin-yandex:v1.0.3-fluent-bit-1.8.6
-    ports:
-      - 24224:24224
-      - 24224:24224/udp
-    restart: always
-    environment:
-      YC_GROUP_ID: <ID_of_log_group>
-    volumes:
-      - /etc/fluentbit/fluentbit.conf:/fluent-bit/etc/fluent-bit.conf
-      - /etc/fluentbit/parsers.conf:/fluent-bit/etc/parsers.conf
-    logging:
-      driver: "local"
-EOF
-
     cat <<EOF > /etc/docker/daemon.json
 {
   "log-driver": "fluentd",
@@ -220,24 +175,75 @@ EOF
 }
 EOF
     sudo systemctl restart docker
+
+cat <<EOF >> "$${deploy_folder}/docker-compose.yml"
+
+  fluentbit:
+    container_name: fluentbit
+    image: cr.yandex/yc/fluent-bit-plugin-yandex:v1.0.3-fluent-bit-1.8.6
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    restart: always
+    volumes:
+      - /etc/fluentbit/fluentbit.conf:/fluent-bit/etc/fluent-bit.conf
+      - /etc/fluentbit/parsers.conf:/fluent-bit/etc/parsers.conf
+    logging:
+      driver: "local"
+EOF
 fi
+
+
+#
+# Configure cron jobs
+#
+cat <<EOF > "$${deploy_folder}/s3_backup.sh"
+#!/bin/bash
+cp -R "$${s3_data_folder}" "$${s3_backup_folder}/\$(date +%Y%m%d_%H%M%S)"
+ls -tr $${s3_backup_folder} | head -n -5 | xargs --no-run-if-empty rm -r
+EOF
+
+sudo chmod 755 "$${deploy_folder}/s3_backup.sh"
+sudo chown ubuntu:ubuntu "$${deploy_folder}/s3_backup.sh"
+echo "0 0 * * 0  $${deploy_folder}/s3_backup.sh" >> /etc/crontab
+
+cat <<EOF > "$${deploy_folder}/certbot_renew.sh"
+#!/bin/bash
+EXITED_CONTAINERS=\$(docker ps -a | grep Exited | awk '{ print \$1 }')
+[ -z "\$${EXITED_CONTAINERS}" ] && echo "No exited containers to clean" || docker rm \$${EXITED_CONTAINERS}
+docker-compose -f "$${deploy_folder}/docker-compose.yml" run --rm certbot renew
+docker-compose -f "$${deploy_folder}/docker-compose.yml" exec nginx nginx -s reload
+EOF
+
+sudo chmod 755 "$${deploy_folder}/certbot_renew.sh"
+sudo chown ubuntu:ubuntu "$${deploy_folder}/certbot_renew.sh"
+echo "0 0 * * 0  $${deploy_folder}/certbot_renew.sh" >> /etc/crontab
 
 #
 # Run MKS
 #
 cd $${deploy_folder}
-export MKS_VERSION="${app_version}"
+#export MKS_VERSION="${app_version}"
 
+export MKS_VERSION="20230311-223152-14b206015538e71939893bf1e1acc0801a7c"
+export MKS_DOMAIN="mks.dev.referrs.me"
+export MKS_SUPPORT_EMAIL="kvendingoldo@gmail.com"
+export NGINX_MODE=https_init
+
+docker-compose up fluentbit -d
+sleep 5
+docker-compose up nginx -d
+docker-compose --profile certbot up -d
+sleep 60
+
+export NGINX_MODE=https
 if [[ "${external_db}" == true ]]; then
-  docker-compose up -d --no-build
+  docker-compose --profile certbot up -d
 else
-  docker-compose --profile=local up -d --no-build
+  docker-compose --profile certbot --profile=local up -d
 fi
 
-sleep 45
-docker start mks-db
-
-docker exec mks-php ./app/console doctrine:migrations:migrate --no-interaction --env=prod
+docker exec mks-app ./app/console doctrine:migrations:migrate --no-interaction --env=prod
 
 admin_password="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="admin_password").text_value')"
-docker exec mks-php ./app/console fos:user:change-password admin "$${admin_password}" --env=prod
+docker exec mks-app ./app/console fos:user:change-password admin "$${admin_password}" --env=prod
