@@ -144,6 +144,10 @@ module "mks_vm" {
       log_group_enabled = var.mks_logging["enabled"],
       log_group_id      = var.mks_logging["enabled"] ? yandex_logging_group.mks[0].id : "",
 
+      domain        = var.mks_options["domain"],
+      support_email = var.mks_options["support_email"],
+      nginx_mode    = var.mks_options["nginx_mode"],
+
       lockbox_secret_name = module.mks_secrets.name,
       sa_name             = module.iam_accounts["mks"].name,
       s3_mysql            = lookup(local.buckets, "mysql") != null ? (local.buckets["mysql"].enabled ? module.storage_buckets["mysql"].name : "") : "",
@@ -155,7 +159,6 @@ module "mks_vm" {
 
       timezone      = var.mks_options["timezone"],
       symfony_debug = var.mks_options["symfony_debug"],
-      nginx_https   = var.mks_options["nginx_https"],
       external_db   = var.mks_options["external_db"],
 
       logo_path     = var.mks_options["logo_path"],
@@ -228,9 +231,8 @@ module "mks_secrets" {
 module "lb" {
   count = var.nlb_enabled ? 1 : 0
 
-  source = "/Users/asharov/projects/personal/nochlezhka/yandex/terraform-yandex-nlb"
-  #source  = "terraform-yacloud-modules/nlb/yandex"
-  #version = "0.2.0"
+  source  = "terraform-yacloud-modules/nlb/yandex"
+  version = "0.2.0"
 
   name   = format("%s-mks", module.naming.common_name)
   labels = var.labels

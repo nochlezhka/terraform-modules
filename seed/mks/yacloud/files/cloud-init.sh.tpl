@@ -13,7 +13,7 @@ certbot_domain=""
 app_root_folder="/opt/homeless/mks"
 source_folder="$${app_root_folder}/sources"
 deploy_folder="$${app_root_folder}/deploy"
-mysql_folder="$${deploy_folder}/storage/mysql_data"
+mysql_folder="$${deploy_folder}/storage/mysql"
 s3_data_folder="$${deploy_folder}/storage/data"
 s3_backup_folder="$${deploy_folder}/storage/backup"
 
@@ -31,15 +31,17 @@ sudo chown -R ubuntu:ubuntu "$${home}/.config/"
 #
 # Prepare filesystem
 #
-sudo mkdir -p "$${app_root_folder}" "$${source_folder}" "$${deploy_folder}" "$${mysql_folder}" "$${s3_data_folder}" "$${s3_backup_folder}"
-sudo mkdir -p "$${s3_data_folder}/uploads" "$${s3_data_folder}/certbot" "$${s3_data_folder}/letsencrypt"
+sudo mkdir -p \
+    "$${app_root_folder}" "$${source_folder}" "$${deploy_folder}" \
+    "$${s3_data_folder}" "$${s3_backup_folder}" "$${mysql_folder}" "$${mysql_folder}/data" \
+    "$${s3_data_folder}/uploads" "$${s3_data_folder}/certbot" "$${s3_data_folder}/letsencrypt"
 sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
 
 #
 # Copy MKS sources
 #
 tag=$(echo ${app_version} | sed 's/-/\//g')
-# TODO
+# TODO: delete if after merge to MKS
 tag="feat/add-certbot"
 git clone --depth 1 -b "$${tag}" https://github.com/nochlezhka/mks.git "$${source_folder}"
 cp "$${source_folder}/deploy/docker-compose.yml" "$${deploy_folder}/docker-compose.yml"
@@ -207,43 +209,42 @@ sudo chmod 755 "$${deploy_folder}/s3_backup.sh"
 sudo chown ubuntu:ubuntu "$${deploy_folder}/s3_backup.sh"
 echo "0 0 * * 0  $${deploy_folder}/s3_backup.sh" >> /etc/crontab
 
-cat <<EOF > "$${deploy_folder}/certbot_renew.sh"
-#!/bin/bash
-EXITED_CONTAINERS=\$(docker ps -a | grep Exited | awk '{ print \$1 }')
-[ -z "\$${EXITED_CONTAINERS}" ] && echo "No exited containers to clean" || docker rm \$${EXITED_CONTAINERS}
-docker-compose -f "$${deploy_folder}/docker-compose.yml" run --rm certbot renew
-docker-compose -f "$${deploy_folder}/docker-compose.yml" exec nginx nginx -s reload
-EOF
-
-sudo chmod 755 "$${deploy_folder}/certbot_renew.sh"
-sudo chown ubuntu:ubuntu "$${deploy_folder}/certbot_renew.sh"
-echo "0 0 * * 0  $${deploy_folder}/certbot_renew.sh" >> /etc/crontab
-
 #
 # Run MKS
 #
 cd $${deploy_folder}
 #export MKS_VERSION="${app_version}"
-
+# TODO: delete if after merge to MKS
 export MKS_VERSION="20230311-223152-14b206015538e71939893bf1e1acc0801a7c"
-export MKS_DOMAIN="mks.dev.referrs.me"
-export MKS_SUPPORT_EMAIL="kvendingoldo@gmail.com"
-export NGINX_MODE=https_init
+export MKS_DOMAIN="${domain}"
+export MKS_SUPPORT_EMAIL="${support_email}"
 
 docker-compose up fluentbit -d
 sleep 5
-docker-compose up nginx -d
-docker-compose --profile certbot up -d
-sleep 60
 
-export NGINX_MODE=https
-if [[ "${external_db}" == true ]]; then
-  docker-compose --profile certbot up -d
+if [[ "${nginx_mode}" == "https" ]]; then
+    export NGINX_MODE=https_init
+
+    docker-compose up nginx -d
+    docker-compose --profile certbot up -d
+    sleep 60
+
+    export NGINX_MODE=https
+    if [[ "${external_db}" == true ]]; then
+      docker-compose --profile certbot up -d
+    else
+      docker-compose --profile certbot --profile=local up -d
+    fi
 else
-  docker-compose --profile certbot --profile=local up -d
+    export NGINX_MODE=http
+    if [[ "${external_db}" == true ]]; then
+      docker-compose up -d
+    else
+      docker-compose --profile=local up -d
+    fi
 fi
 
-docker exec mks-app ./app/console doctrine:migrations:migrate --no-interaction --env=prod
 
+docker exec mks-app ./app/console doctrine:migrations:migrate --no-interaction --env=prod
 admin_password="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="admin_password").text_value')"
 docker exec mks-app ./app/console fos:user:change-password admin "$${admin_password}" --env=prod

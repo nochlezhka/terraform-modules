@@ -41,8 +41,8 @@ variable "security_groups" {
           predefined_target = "self_security_group"
         }
         "8080_to_gw" = {
-          protocol            = "tcp"
-          port                = 8080
+          protocol       = "tcp"
+          port           = 8080
           v4_cidr_blocks = ["0.0.0.0/0"]
         }
         "8443_to_self" = {
@@ -51,37 +51,8 @@ variable "security_groups" {
           predefined_target = "self_security_group"
         }
         "8443_to_gw" = {
-          protocol            = "tcp"
-          port                = 8443
-          v4_cidr_blocks = ["0.0.0.0/0"]
-        }
-      }
-      egress_rules = {
-        "all" = {
           protocol       = "tcp"
-          from_port      = 0
-          to_port        = 65535
-          v4_cidr_blocks = ["0.0.0.0/0"]
-        }
-      }
-    }
-
-    gw = {
-      ingress_rules = {
-        "https_to_internet" = {
-          protocol       = "tcp"
-          port           = 443
-          v4_cidr_blocks = ["0.0.0.0/0"]
-        }
-        "http_to_internet" = {
-          protocol       = "tcp"
-          port           = 80
-          v4_cidr_blocks = ["0.0.0.0/0"]
-        }
-        "balancer_health_checks" = {
-          protocol       = "tcp"
-          from_port      = 30000
-          to_port        = 32767
+          port           = 8443
           v4_cidr_blocks = ["0.0.0.0/0"]
         }
       }
@@ -179,9 +150,12 @@ variable "mks_options" {
   default = {
     app_version = "rc-0.29.0"
 
+    domain        = "mydomain.com"
+    support_email = "support@mydomain.com"
+    nginx_mode    = "http"
+
     timezone      = "Etc/GMT-3"
     symfony_debug = 1
-    nginx_https   = "on"
 
     external_db = false
 
