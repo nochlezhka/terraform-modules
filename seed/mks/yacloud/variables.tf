@@ -148,7 +148,7 @@ variable "mks_vm_options" {
 
 variable "mks_options" {
   default = {
-    app_version = "rc-0.29.0"
+    app_version = "rc-0.34.0"
 
     domain        = "mydomain.com"
     support_email = "support@mydomain.com"

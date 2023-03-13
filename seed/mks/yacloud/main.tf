@@ -232,7 +232,7 @@ module "lb" {
   count = var.nlb_enabled ? 1 : 0
 
   source  = "terraform-yacloud-modules/nlb/yandex"
-  version = "0.2.0"
+  version = "0.6.0"
 
   name   = format("%s-mks", module.naming.common_name)
   labels = var.labels

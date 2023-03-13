@@ -41,8 +41,6 @@ sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
 # Copy MKS sources
 #
 tag=$(echo ${app_version} | sed 's/-/\//g')
-# TODO: delete if after merge to MKS
-tag="feat/add-certbot"
 git clone --depth 1 -b "$${tag}" https://github.com/nochlezhka/mks.git "$${source_folder}"
 cp "$${source_folder}/deploy/docker-compose.yml" "$${deploy_folder}/docker-compose.yml"
 
@@ -213,9 +211,7 @@ echo "0 0 * * 0  $${deploy_folder}/s3_backup.sh" >> /etc/crontab
 # Run MKS
 #
 cd $${deploy_folder}
-#export MKS_VERSION="${app_version}"
-# TODO: delete if after merge to MKS
-export MKS_VERSION="20230311-223152-14b206015538e71939893bf1e1acc0801a7c"
+export MKS_VERSION="${app_version}"
 export MKS_DOMAIN="${domain}"
 export MKS_SUPPORT_EMAIL="${support_email}"
 
@@ -244,6 +240,8 @@ else
     fi
 fi
 
+
+sleep 30
 
 docker exec mks-app ./app/console doctrine:migrations:migrate --no-interaction --env=prod
 admin_password="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="admin_password").text_value')"
