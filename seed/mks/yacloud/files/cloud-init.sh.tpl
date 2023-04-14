@@ -33,7 +33,7 @@ sudo chown -R ubuntu:ubuntu "$${home}/.config/"
 #
 sudo mkdir -p \
     "$${app_root_folder}" "$${source_folder}" "$${deploy_folder}" \
-    "$${s3_data_folder}" "$${s3_backup_folder}" "$${mysql_folder}" "$${mysql_folder}/data" \
+    "$${s3_data_folder}" "$${s3_backup_folder}" "$${mysql_folder}" \
     "$${s3_data_folder}/uploads" "$${s3_data_folder}/certbot" "$${s3_data_folder}/letsencrypt"
 sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
 
@@ -74,6 +74,9 @@ if [[ "${s3_mysql}" != "" ]]; then
         -o url=https://storage.yandexcloud.net \
         -o use_path_request_style \
         -o allow_other
+
+    mkdir -p "$${mysql_folder}/data"
+    sudo chown -R ubuntu:ubuntu "$${mysql_folder}/data"
 fi
 
 #
