@@ -33,9 +33,7 @@ sudo chown -R ubuntu:ubuntu "$${home}/.config/"
 #
 sudo mkdir -p \
     "$${app_root_folder}" "$${source_folder}" "$${deploy_folder}" \
-    "$${s3_data_folder}" "$${s3_backup_folder}" "$${mysql_folder}" \
-    "$${s3_data_folder}/uploads" "$${s3_data_folder}/certbot" "$${s3_data_folder}/letsencrypt"
-sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
+    "$${s3_data_folder}" "$${s3_backup_folder}" "$${mysql_folder}"
 
 #
 # Copy MKS sources
@@ -68,16 +66,18 @@ s3fs ${s3_data} "$${s3_data_folder}" \
     -o use_path_request_style \
     -o allow_other
 
+mkdir -p "$${s3_data_folder}/uploads" "$${s3_data_folder}/certbot" "$${s3_data_folder}/letsencrypt"
+
 if [[ "${s3_mysql}" != "" ]]; then
     s3fs ${s3_mysql} "$${mysql_folder}" \
         -o passwd_file="$${s3fs_passwd_path}" \
         -o url=https://storage.yandexcloud.net \
         -o use_path_request_style \
         -o allow_other
-
     mkdir -p "$${mysql_folder}/data"
-    sudo chown -R ubuntu:ubuntu "$${mysql_folder}/data"
 fi
+
+sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
 
 #
 # Create MKS configuration file
