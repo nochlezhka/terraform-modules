@@ -2,7 +2,7 @@
 # naming
 #
 module "naming" {
-  source = "git@github.com:nochlezhka/terraform-modules.git//misc/naming/?ref=rc/0.31.0"
+  source = "git@github.com:nochlezhka/terraform-modules.git//misc/naming/?ref=main"
 
   env_abbr = var.env_abbr
 }
