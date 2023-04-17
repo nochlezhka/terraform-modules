@@ -80,6 +80,9 @@ jobs:
           fetch-depth: 0
       -
         name: Set application version
+        id: set_version
         uses: kvendingoldo/semver-action@v1.15
         with:
           primary_branch: main
+          enable_github_releases: true
+          github_token: "${{ secrets.GITHUB_TOKEN }}"
