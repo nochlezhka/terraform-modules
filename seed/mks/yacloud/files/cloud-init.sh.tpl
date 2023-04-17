@@ -42,7 +42,7 @@ cp "$${source_folder}/deploy/docker-compose.yml" "$${deploy_folder}/docker-compo
 #
 # Mount mysql storage
 #
-sudo mount /dev/vdb "$${mysql_folder}/data"
+sudo mount /dev/vdb "$${mysql_folder}"
 sudo mkdir -p "$${mysql_folder}/data"
 
 #
