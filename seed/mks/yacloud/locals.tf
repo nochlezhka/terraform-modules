@@ -36,16 +36,7 @@ locals {
   }
   }
 
-  enabled_buckets = {
+  buckets = {
   for k, v in var.buckets : k => v if v["enabled"]
   }
-
-  buckets = !var.mks_options["external_db"] ? merge(local.enabled_buckets, {
-    mysql = {
-      enabled           = true
-      storage_class     = "STANDARD"
-      max_size          = 5368709120
-      enable_versioning = false
-    }
-  }) : local.enabled_buckets
 }

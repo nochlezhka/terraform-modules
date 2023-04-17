@@ -3,9 +3,6 @@ set -x
 
 home="/home/ubuntu"
 lockbox_secret_name="${lockbox_secret_name}"
-domain
-certbot_email=""
-certbot_domain=""
 
 #
 # MKS folders
@@ -33,7 +30,7 @@ sudo chown -R ubuntu:ubuntu "$${home}/.config/"
 #
 sudo mkdir -p \
     "$${app_root_folder}" "$${source_folder}" "$${deploy_folder}" \
-    "$${s3_data_folder}" "$${s3_backup_folder}" "$${mysql_folder}"
+    "$${s3_data_folder}" "$${s3_backup_folder}" "$${mysql_folder}" "$${mysql_folder}/data"
 
 #
 # Copy MKS sources
@@ -67,15 +64,6 @@ s3fs ${s3_data} "$${s3_data_folder}" \
     -o allow_other
 
 mkdir -p "$${s3_data_folder}/uploads" "$${s3_data_folder}/certbot" "$${s3_data_folder}/letsencrypt"
-
-if [[ "${s3_mysql}" != "" ]]; then
-    s3fs ${s3_mysql} "$${mysql_folder}" \
-        -o passwd_file="$${s3fs_passwd_path}" \
-        -o url=https://storage.yandexcloud.net \
-        -o use_path_request_style \
-        -o allow_other
-    mkdir -p "$${mysql_folder}/data"
-fi
 
 sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
 
@@ -208,7 +196,8 @@ EOF
 
 sudo chmod 755 "$${deploy_folder}/s3_backup.sh"
 sudo chown ubuntu:ubuntu "$${deploy_folder}/s3_backup.sh"
-echo "0 0 * * 0  $${deploy_folder}/s3_backup.sh" >> /etc/crontab
+# NOTE: every 2nd day at 23:00
+echo "0 23 */2 * *  $${deploy_folder}/s3_backup.sh" >> /etc/crontab
 
 #
 # Run MKS

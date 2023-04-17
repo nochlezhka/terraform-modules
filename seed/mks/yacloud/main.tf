@@ -109,7 +109,7 @@ resource "yandex_logging_group" "mks" {
 
 module "mks_vm" {
   source  = "terraform-yacloud-modules/instance-group/yandex"
-  version = "0.3.0"
+  version = "0.8.0"
 
   # NOTE: we use the one AZ instead of var.azs to reduce cloud price
   zones = ["ru-central1-a"]
@@ -150,7 +150,6 @@ module "mks_vm" {
 
       lockbox_secret_name = module.mks_secrets.name,
       sa_name             = module.iam_accounts["mks"].name,
-      s3_mysql            = lookup(local.buckets, "mysql") != null ? (local.buckets["mysql"].enabled ? module.storage_buckets["mysql"].name : "") : "",
       s3_data             = lookup(local.buckets, "data") != null ? (local.buckets["data"].enabled ? module.storage_buckets["data"].name : "") : "",
       s3_backup           = lookup(local.buckets, "backup") != null ? (local.buckets["backup"].enabled ? module.storage_buckets["backup"].name : "") : "",
 
@@ -185,6 +184,7 @@ module "mks_vm" {
   generate_ssh_key            = var.mks_vm_options["generate_ssh_key"]
   ssh_user                    = var.mks_vm_options["ssh_user"]
   boot_disk_initialize_params = var.mks_vm_options["boot_disk_initialize_params"]
+  secondary_disks             = var.mks_vm_options["secondary_disks"]
 
   max_checking_health_duration = null
   health_check                 = {

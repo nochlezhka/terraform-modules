@@ -98,7 +98,7 @@ variable "buckets" {
     backup = {
       enabled           = true
       storage_class     = "COLD"
-      max_size          = 5368709120
+      max_size          = 10737418240
       enable_versioning = false
     }
   }
@@ -142,6 +142,15 @@ variable "mks_vm_options" {
     boot_disk_initialize_params = {
       size = 30
       type = "network-hdd"
+    }
+
+    secondary_disks = {
+      mysql = {
+        enabled     = true
+        size        = 15
+        type        = "network-hdd"
+        device_name = "mysql_data"
+      }
     }
   }
 }
