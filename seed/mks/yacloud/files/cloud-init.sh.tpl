@@ -30,7 +30,7 @@ sudo chown -R ubuntu:ubuntu "$${home}/.config/"
 #
 sudo mkdir -p \
     "$${app_root_folder}" "$${source_folder}" "$${deploy_folder}" \
-    "$${s3_data_folder}" "$${s3_backup_folder}" "$${mysql_folder}" "$${mysql_folder}/data"
+    "$${s3_data_folder}" "$${s3_backup_folder}" "$${mysql_folder}"
 
 #
 # Copy MKS sources
@@ -38,6 +38,12 @@ sudo mkdir -p \
 tag=$(echo ${app_version} | sed 's/-/\//g')
 git clone --depth 1 -b "$${tag}" https://github.com/nochlezhka/mks.git "$${source_folder}"
 cp "$${source_folder}/deploy/docker-compose.yml" "$${deploy_folder}/docker-compose.yml"
+
+#
+# Mount mysql storage
+#
+sudo mount /dev/vdb mysql/data/
+sudo mkdir -p "$${mysql_folder}/data"
 
 #
 # Mount S3 buckets
