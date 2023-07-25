@@ -85,6 +85,7 @@ TZ="${timezone}"
 
 SYMFONY_DEBUG="${symfony_debug}"
 APP_VER="${app_version}"
+APP_SECRET=b47298724d7715b851fbb108dcae9897
 
 LOGO_PATH="${logo_path}"
 BIG_LOGO_PATH="${big_logo_path}"
@@ -241,6 +242,6 @@ fi
 
 sleep 30
 
-docker exec mks-app ./app/console doctrine:migrations:migrate --no-interaction --env=prod
+docker exec mks-app ./bin/console doctrine:migrations:migrate --no-interaction --env=prod
 admin_password="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="admin_password").text_value')"
-docker exec mks-app ./app/console fos:user:change-password admin "$${admin_password}" --env=prod
+docker exec mks-app ./bin/console sonata:user:change-password admin "$${admin_password}" --env=prod
