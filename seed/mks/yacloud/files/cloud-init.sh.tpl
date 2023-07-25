@@ -87,6 +87,9 @@ SYMFONY_DEBUG="${symfony_debug}"
 APP_VER="${app_version}"
 APP_SECRET=b47298724d7715b851fbb108dcae9897
 
+TRUSTED_PROXIES='127.0.0.1'
+TRUSTED_HOSTS="${trusted_hosts}"
+
 LOGO_PATH="${logo_path}"
 BIG_LOGO_PATH="${big_logo_path}"
 

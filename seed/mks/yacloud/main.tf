@@ -144,6 +144,7 @@ module "mks_vm" {
       log_group_enabled = var.mks_logging["enabled"],
       log_group_id      = var.mks_logging["enabled"] ? yandex_logging_group.mks[0].id : "",
 
+      trusted_hosts = var.mks_options["trusted_hosts"],
       domain        = var.mks_options["domain"],
       support_email = var.mks_options["support_email"],
       nginx_mode    = var.mks_options["nginx_mode"],

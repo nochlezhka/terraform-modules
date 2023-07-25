@@ -159,6 +159,7 @@ variable "mks_options" {
   default = {
     app_version = "rc-0.34.0"
 
+    trusted_hosts = "^your\\.domain$"
     domain        = "mydomain.com"
     support_email = "support@mydomain.com"
     nginx_mode    = "http"
