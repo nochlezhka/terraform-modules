@@ -207,7 +207,7 @@ EOF
 sudo chmod 755 "$${deploy_folder}/s3_backup.sh"
 sudo chown ubuntu:ubuntu "$${deploy_folder}/s3_backup.sh"
 # NOTE: every 2nd day at 23:00
-echo "0 23 */2 * *  $${deploy_folder}/s3_backup.sh" >> /etc/crontab
+echo "0 23 */2 * *  $${deploy_folder}/s3_backup.sh" >> /var/spool/cron/crontabs/ubuntu
 
 #
 # Run MKS
