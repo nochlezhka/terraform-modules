@@ -157,9 +157,14 @@ module "mks_vm" {
       env_abbr    = var.env_abbr,
       app_version = var.mks_options["app_version"],
 
-      timezone      = var.mks_options["timezone"],
-      symfony_debug = var.mks_options["symfony_debug"],
+      timezone                 = var.mks_options["timezone"],
+      symfony_debug            = var.mks_options["symfony_debug"],
+      mailer_dsn               = var.mks_options["mailer_dsn"],
+      sonata_resetting_address = var.mks_options["sonata_resetting_address"],
+      sonata_resetting_sender  = var.mks_options["sonata_resetting_sender"],
+
       external_db   = var.mks_options["external_db"],
+      initial_setup = var.mks_options["initial_setup"],
 
       logo_path     = var.mks_options["logo_path"],
       big_logo_path = var.mks_options["big_logo_path"],

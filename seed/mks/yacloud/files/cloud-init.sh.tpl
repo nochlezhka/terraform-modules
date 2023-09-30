@@ -42,6 +42,19 @@ cp "$${source_folder}/deploy/docker-compose.yml" "$${deploy_folder}/docker-compo
 #
 # Mount mysql storage
 #
+if [[ "${initial_setup}" == "true" ]]; then
+    echo "Looks like it's initial installation of MKS; Partitions and filesystem will be created for /dev/vdb disk"
+    fdisk -u -p /dev/vdb <<EOF
+n
+p
+1
+
+w
+EOF
+
+    sudo mkfs.ext4 /dev/vdb
+fi
+
 sudo mount /dev/vdb "$${mysql_folder}"
 sudo mkdir -p "$${mysql_folder}/data"
 
@@ -91,6 +104,10 @@ APP_SECRET="$${app_secret}"
 
 TRUSTED_PROXIES='127.0.0.1'
 TRUSTED_HOSTS="${trusted_hosts}"
+
+MAILER_DSN="${mailer_dsn}"
+SONATA_RESETTING_ADDRESS="${sonata_resetting_address}"
+SONATA_RESETTING_SENDER="${sonata_resetting_sender}"
 
 LOGO_PATH="${logo_path}"
 BIG_LOGO_PATH="${big_logo_path}"
@@ -199,6 +216,9 @@ fi
 #
 # Configure cron jobs
 #
+sudo mkdir -p "$${s3_backup_folder}/s3" "$${s3_backup_folder}/db"
+sudo chown -R ubuntu:ubuntu "$${s3_backup_folder}"
+
 cat <<EOF > "$${deploy_folder}/backup_s3.sh"
 #!/bin/bash
 cp -R "$${s3_data_folder}" "$${s3_backup_folder}/s3/\$(date +%Y%m%d_%H%M%S)"
@@ -258,5 +278,8 @@ fi
 sleep 30
 
 docker exec mks-app ./bin/console doctrine:migrations:migrate --no-interaction --env=prod
-admin_password="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="admin_password").text_value')"
-docker exec mks-app ./bin/console sonata:user:change-password admin "$${admin_password}" --env=prod
+
+if [[ "${initial_setup}" == "true" ]]; then
+    admin_password="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="admin_password").text_value')"
+    docker exec mks-app ./bin/console sonata:user:change-password admin "$${admin_password}" --env=prod
+fi
