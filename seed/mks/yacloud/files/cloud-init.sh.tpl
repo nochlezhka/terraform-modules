@@ -79,13 +79,15 @@ sudo chown -R ubuntu:ubuntu "$${app_root_folder}"
 db_name="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="db_name").text_value')"
 db_user="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="db_user").text_value')"
 db_password="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="db_password").text_value')"
+app_secret="$($${home}/yandex-cloud/bin/yc lockbox payload get --name $${lockbox_secret_name} --format json | jq -r '.entries[] | select(.key=="app_secret").text_value')"
+
 
 cat <<EOF > $${deploy_folder}/.env
 TZ="${timezone}"
 
 SYMFONY_DEBUG="${symfony_debug}"
 APP_VER="${app_version}"
-APP_SECRET=b47298724d7715b851fbb108dcae9897
+APP_SECRET="$${app_secret}"
 
 TRUSTED_PROXIES='127.0.0.1'
 TRUSTED_HOSTS="${trusted_hosts}"
@@ -194,20 +196,31 @@ cat <<EOF >> "$${deploy_folder}/docker-compose.yml"
 EOF
 fi
 
-
 #
 # Configure cron jobs
 #
-cat <<EOF > "$${deploy_folder}/s3_backup.sh"
+cat <<EOF > "$${deploy_folder}/backup_s3.sh"
 #!/bin/bash
-cp -R "$${s3_data_folder}" "$${s3_backup_folder}/\$(date +%Y%m%d_%H%M%S)"
-ls -tr $${s3_backup_folder} | head -n -5 | xargs --no-run-if-empty rm -r
+cp -R "$${s3_data_folder}" "$${s3_backup_folder}/s3/\$(date +%Y%m%d_%H%M%S)"
+ls -tr $${s3_backup_folder}/s3 | head -n -10 | xargs --no-run-if-empty rm -r
 EOF
 
-sudo chmod 755 "$${deploy_folder}/s3_backup.sh"
-sudo chown ubuntu:ubuntu "$${deploy_folder}/s3_backup.sh"
+sudo chmod 755 "$${deploy_folder}/backup_s3.sh"
+sudo chown ubuntu:ubuntu "$${deploy_folder}/backup_s3.sh"
+# NOTE: every 2nd day at 22:00
+echo "0 22 */2 * *  $${deploy_folder}/backup_s3.sh" >> /var/spool/cron/crontabs/ubuntu
+
+
+cat <<EOF > "$${deploy_folder}/backup_db.sh"
+#!/bin/bash
+cp -R "$${mysql_folder}/data" "$${s3_backup_folder}/db/\$(date +%Y%m%d_%H%M%S)"
+ls -tr $${s3_backup_folder}/db | head -n -10 | xargs --no-run-if-empty rm -r
+EOF
+
+sudo chmod 755 "$${deploy_folder}/backup_db.sh"
+sudo chown ubuntu:ubuntu "$${deploy_folder}/backup_db.sh"
 # NOTE: every 2nd day at 23:00
-echo "0 23 */2 * *  $${deploy_folder}/s3_backup.sh" >> /var/spool/cron/crontabs/ubuntu
+echo "0 23 */2 * *  $${deploy_folder}/backup_db.sh" >> /var/spool/cron/crontabs/ubuntu
 
 #
 # Run MKS
@@ -241,7 +254,6 @@ else
       docker-compose --profile=local up -d
     fi
 fi
-
 
 sleep 30
 
