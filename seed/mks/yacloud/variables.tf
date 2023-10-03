@@ -164,10 +164,14 @@ variable "mks_options" {
     support_email = "support@mydomain.com"
     nginx_mode    = "http"
 
-    timezone      = "Etc/GMT-3"
-    symfony_debug = 1
+    timezone                 = "Etc/GMT-3"
+    symfony_debug            = 1
+    mailer_dsn               = "smtp://localhost"
+    sonata_resetting_address = "sonata@localhost"
+    sonata_resetting_sender  = "Sonata Admin"
 
-    external_db = false
+    external_db   = false
+    initial_setup = false
 
     logo_path     = ""
     big_logo_path = ""
@@ -193,6 +197,7 @@ variable "mks_options" {
 variable "mks_secrets" {
   default = {
     admin_password = "password"
+    app_secret     = "b47298724d7715b851fbb108dcae9897"
     db_host        = "db"
     db_port        = 3306
     db_name        = "homeless"
