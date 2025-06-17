@@ -31,34 +31,34 @@ variable "security_groups" {
     mks = {
       ingress_rules = {
         "ssh_to_internet" = {
-          protocol       = "tcp"
+          protocol       = "TCP"
           port           = 22
           v4_cidr_blocks = ["0.0.0.0/0"]
         }
         "8080_to_self" = {
-          protocol          = "tcp"
+          protocol          = "TCP"
           port              = 8080
           predefined_target = "self_security_group"
         }
         "8080_to_gw" = {
-          protocol       = "tcp"
+          protocol       = "TCP"
           port           = 8080
           v4_cidr_blocks = ["0.0.0.0/0"]
         }
         "8443_to_self" = {
-          protocol          = "tcp"
+          protocol          = "TCP"
           port              = 8443
           predefined_target = "self_security_group"
         }
         "8443_to_gw" = {
-          protocol       = "tcp"
+          protocol       = "TCP"
           port           = 8443
           v4_cidr_blocks = ["0.0.0.0/0"]
         }
       }
       egress_rules = {
         "all" = {
-          protocol       = "tcp"
+          protocol       = "TCP"
           from_port      = 0
           to_port        = 65535
           v4_cidr_blocks = ["0.0.0.0/0"]
