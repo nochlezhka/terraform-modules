@@ -53,7 +53,7 @@ jobs:
           tflint -f compact
       -
         name: Test code with TFSec
-        uses: aquasecurity/tfsec-sarif-action@v0.1.0
+        uses: aquasecurity/tfsec-sarif-action@v0.1.4
         with:
           sarif_file: tfsec.sarif
   semver:
