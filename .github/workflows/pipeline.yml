@@ -37,7 +37,7 @@ jobs:
           terraform_wrapper: false
       -
         name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v2
+        uses: terraform-linters/setup-tflint@v4
         with:
           tflint_version: v0.38.1
       -
