@@ -15,7 +15,7 @@ concurrency:
 jobs:
   linters:
     name: 'Terraform Linters'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
@@ -58,7 +58,7 @@ jobs:
           sarif_file: tfsec.sarif
   semver:
     name: 'Set code version tag'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs:
       - linters
     defaults:
@@ -81,8 +81,9 @@ jobs:
       -
         name: Set application version
         id: set_version
-        uses: kvendingoldo/semver-action@v1.15
+        uses: kvendingoldo/git-flow-action@v2.0.2
         with:
-          primary_branch: main
-          enable_github_releases: true
+          enable_github_release: true
+          auto_release_branches: "main"
+          tag_prefix_release: "v"
           github_token: "${{ secrets.GITHUB_TOKEN }}"
